@@ -115,7 +115,7 @@ def train_model(model_args: ModelConfig, training_args: GRPOConfig):
         r1_prefix = [
             {
                 "role": "system",
-                "content": "You are a helpful assistant. You first thinks about the reasoning process in the mind and then provides the user with the answer.",
+                "content": "You are a helpful assistant. You first think about the reasoning process in the mind and then provide the user with the answer.",
             },
             {
                 "role": "user",
