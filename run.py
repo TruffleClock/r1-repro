@@ -203,7 +203,7 @@ def main():
         # training
         output_dir="runs/qwen-2.5-3b-r1-countdown",
         seed=42,
-        max_steps=10,  # 450,
+        max_steps=450,
         per_device_train_batch_size=1,
         gradient_accumulation_steps=8,
         gradient_checkpointing=True,
