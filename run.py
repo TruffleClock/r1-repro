@@ -211,7 +211,7 @@ def main():
         # vllm
         use_vllm=True,
         vllm_gpu_memory_utilization=0.5,
-        vllm_device="cuda:7",
+        # vllm_device="cuda:3",
         # model
         bf16=True,
         tf32=True,
