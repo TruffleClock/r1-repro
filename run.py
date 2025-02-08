@@ -17,7 +17,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+handler.setFormatter(
+    logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+)
 logger.addHandler(handler)
 
 
@@ -125,7 +127,9 @@ def train_model(model_args: ModelConfig, training_args: GRPOConfig):
             },
         ]
         return {
-            "prompt": tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True),
+            "prompt": tokenizer.apply_chat_template(
+                r1_prefix, tokenize=False, continue_final_message=True
+            ),
             "target": target,
             "nums": numbers,
         }
@@ -191,7 +195,7 @@ def main():
         # training
         output_dir="runs/qwen-2.5-3b-r1-countdown",
         seed=42,
-        max_steps=450,
+        max_steps=10,  # 450,
         per_device_train_batch_size=1,
         gradient_accumulation_steps=8,
         gradient_checkpointing=True,
