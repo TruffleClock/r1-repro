@@ -9,7 +9,7 @@ from datetime import datetime
 
 import torch  # noqa: F401
 from datasets import load_dataset
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast
 from transformers.trainer_utils import get_last_checkpoint
 from trl import GRPOConfig, GRPOTrainer, ModelConfig
 
@@ -93,6 +93,29 @@ def get_checkpoint(training_args: GRPOConfig):
     return last_checkpoint
 
 
+def save_model(
+    trainer: GRPOTrainer,
+    tokenizer: PreTrainedTokenizer | PreTrainedTokenizerFast,
+    training_args: GRPOConfig,
+):
+    logger.info("*** Save model ***")
+    trainer.model.config.use_cache = True  # type: ignore
+    trainer.save_model(training_args.output_dir)
+    logger.info(f"Model saved to {training_args.output_dir}")
+    training_args.distributed_state.wait_for_everyone()  # type: ignore
+
+    tokenizer.save_pretrained(training_args.output_dir)
+    logger.info(f"Tokenizer saved to {training_args.output_dir}")
+
+    if trainer.accelerator.is_main_process:
+        trainer.create_model_card()
+    if training_args.push_to_hub:
+        logger.info("Pushing to hub...")
+        trainer.push_to_hub()
+
+    logger.info("*** Model saved ***")
+
+
 def train_model(model_args: ModelConfig, training_args: GRPOConfig):
     logger.info(f"Model parameters: {model_args}")
     logger.info(f"Training parameters: {training_args}")
@@ -111,7 +134,7 @@ def train_model(model_args: ModelConfig, training_args: GRPOConfig):
     dataset = load_dataset("Jiayi-Pan/Countdown-Tasks-3to4", split="train")
     dataset = dataset.shuffle(seed=42).select(range(50000))  # type: ignore
 
-    def generate_r1_prompt(numbers, target):
+    def format_r1_prompt(numbers, target):
         r1_prefix = [
             {
                 "role": "system",
@@ -134,7 +157,7 @@ def train_model(model_args: ModelConfig, training_args: GRPOConfig):
             "nums": numbers,
         }
 
-    dataset = dataset.map(lambda x: generate_r1_prompt(x["nums"], x["target"]))
+    dataset = dataset.map(lambda x: format_r1_prompt(x["nums"], x["target"]))
 
     train_test_split = dataset.train_test_split(test_size=0.1)
     train_dataset = train_test_split["train"]
@@ -165,22 +188,7 @@ def train_model(model_args: ModelConfig, training_args: GRPOConfig):
 
     logger.info("*** Training complete ***")
 
-    logger.info("*** Save model ***")
-    trainer.model.config.use_cache = True  # type: ignore
-    trainer.save_model(training_args.output_dir)
-    logger.info(f"Model saved to {training_args.output_dir}")
-    training_args.distributed_state.wait_for_everyone()  # type: ignore
-
-    tokenizer.save_pretrained(training_args.output_dir)
-    logger.info(f"Tokenizer saved to {training_args.output_dir}")
-
-    if trainer.accelerator.is_main_process:
-        trainer.create_model_card()
-    if training_args.push_to_hub:
-        logger.info("Pushing to hub...")
-        trainer.push_to_hub()
-
-    logger.info("*** Model saved ***")
+    save_model(trainer, tokenizer, training_args)
 
 
 def main():
